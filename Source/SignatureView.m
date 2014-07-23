@@ -14,6 +14,12 @@
 @property (nonatomic, assign) CGPoint previousPoint;
 @property (nonatomic, strong) UIImage *tempImage;
 
+@property (nonatomic, assign) CGPoint topMostPoint;
+@property (nonatomic, assign) CGPoint bottomMostPoint;
+@property (nonatomic, assign) CGPoint leftMostPoint;
+@property (nonatomic, assign) CGPoint rightMostPoint;
+@property (nonatomic, assign) CGRect cropRect;
+
 @property (nonatomic, assign) BOOL blank;
 
 @end
@@ -43,6 +49,12 @@
     
     [self _setupDefaultValues];
     [self _initializeRecognizer];
+    
+    self.leftMostPoint = CGPointZero;
+    self.rightMostPoint = CGPointZero;
+    self.bottomMostPoint = CGPointZero;
+    self.topMostPoint = CGPointZero;
+    
 }
 
 - (void)_setupDefaultValues {
@@ -99,6 +111,14 @@
 }
 
 - (UIImage *)signatureImage {
+    UIImage *tmpImage = [self.image copy];
+    
+    CGImageRef imageRef = CGImageCreateWithImageInRect([tmpImage CGImage], self.cropRect);
+    // or use the UIImage wherever you like
+    tmpImage = [UIImage imageWithCGImage:imageRef];
+    CGImageRelease(imageRef);
+    return tmpImage;
+    
     return [self.image copy];
 }
 
@@ -146,6 +166,12 @@
     
     self.image = [self _drawLineWithPoints:splinePoints image:self.tempImage];
     
+    for(NSValue *val in self.drawnPoints)
+    {
+        CGPoint point = [val CGPointValue];
+        [self calculatePoint:point];
+    }
+    
     self.drawnPoints = nil;
     self.tempImage = nil;
 }
@@ -154,6 +180,36 @@
     
 }
 
+- (void)calculatePoint:(CGPoint)point
+{
+    if(point.x < self.leftMostPoint.x || (self.leftMostPoint.x == 0 && self.leftMostPoint.y == 0))
+    {
+        self.leftMostPoint = point;
+    }
+    if(point.x > self.rightMostPoint.x || (self.rightMostPoint.x == 0 && self.rightMostPoint.y == 0))
+    {
+        self.rightMostPoint = point;
+    }
+    if(point.y > self.bottomMostPoint.y || (self.bottomMostPoint.x == 0 && self.bottomMostPoint.y == 0))
+    {
+        self.bottomMostPoint = point;
+    }
+    if(point.y < self.topMostPoint.y || (self.topMostPoint.x == 0 && self.topMostPoint.y == 0))
+    {
+        self.topMostPoint = point;
+    }
+    
+    [self calculateCropRect];
+}
+
+- (void)calculateCropRect
+{
+    CGRect rect;
+    
+    rect = CGRectMake(self.leftMostPoint.x, self.topMostPoint.y, self.rightMostPoint.x - self.leftMostPoint.x, self.bottomMostPoint.y - self.topMostPoint.y);
+    
+    self.cropRect = rect;
+}
 
 #pragma mark - Drawing
 
@@ -276,7 +332,7 @@
 }
 
 - (NSArray *)_catmullRomSpline:(NSArray *)points segments:(int)segments {
-
+    
     NSInteger count = [points count];
     if(count < 4) return points;
     
