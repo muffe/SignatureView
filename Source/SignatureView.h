@@ -25,7 +25,9 @@
 - (void)clearWithColor:(UIColor *)color;
 
 - (UIImage *)signatureImage;
+- (UIImage *)signatureImageCroppedToVisibleArea;
 - (NSData *)signatureData;
+- (NSData *)signatureDataCroppedToVisibleArea;
 
 - (BOOL)isSigned;
 

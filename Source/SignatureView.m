@@ -24,6 +24,8 @@
 
 @end
 
+static const NSInteger imageMargin = 20;
+
 @implementation SignatureView
 
 - (id)initWithCoder:(NSCoder *)aDecoder {
@@ -110,20 +112,34 @@
     return !self.blank;
 }
 
-- (UIImage *)signatureImage {
+- (UIImage *)signatureImageCroppedToVisibleArea
+{
     UIImage *tmpImage = [self.image copy];
     
     CGImageRef imageRef = CGImageCreateWithImageInRect([tmpImage CGImage], self.cropRect);
-    // or use the UIImage wherever you like
+    
     tmpImage = [UIImage imageWithCGImage:imageRef];
     CGImageRelease(imageRef);
     return tmpImage;
-    
+}
+
+- (UIImage *)signatureImage {
     return [self.image copy];
 }
 
 - (NSData *)signatureData {
     return UIImagePNGRepresentation(self.image);
+}
+
+- (NSData *)signatureDataCroppedToVisibleArea
+{
+    UIImage *tmpImage = [self.image copy];
+    
+    CGImageRef imageRef = CGImageCreateWithImageInRect([tmpImage CGImage], self.cropRect);
+    
+    tmpImage = [UIImage imageWithCGImage:imageRef];
+    CGImageRelease(imageRef);
+    return UIImagePNGRepresentation(tmpImage);
 }
 
 
@@ -166,7 +182,7 @@
     
     self.image = [self _drawLineWithPoints:splinePoints image:self.tempImage];
     
-    for(NSValue *val in self.drawnPoints)
+    for(NSValue *val in splinePoints)
     {
         CGPoint point = [val CGPointValue];
         [self calculatePoint:point];
@@ -205,8 +221,10 @@
 - (void)calculateCropRect
 {
     CGRect rect;
+    CGFloat screenScale = [[UIScreen mainScreen] scale];
     
-    rect = CGRectMake(self.leftMostPoint.x, self.topMostPoint.y, self.rightMostPoint.x - self.leftMostPoint.x, self.bottomMostPoint.y - self.topMostPoint.y);
+    rect = CGRectMake((self.leftMostPoint.x * screenScale) - imageMargin, (self.topMostPoint.y * screenScale) - imageMargin, ((self.rightMostPoint.x - self.leftMostPoint.x) * screenScale) + imageMargin*2, ((self.bottomMostPoint.y - self.topMostPoint.y) * screenScale) + imageMargin*2);
+    
     
     self.cropRect = rect;
 }
