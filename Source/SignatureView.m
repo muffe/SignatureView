@@ -177,6 +177,13 @@ static const NSInteger imageMargin = 20;
 
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
     
+    if(self.drawnPoints.count == 1)
+    {
+        CGPoint firstPoint = [self.drawnPoints.firstObject CGPointValue];
+        CGPoint secondPoint = CGPointMake(firstPoint.x, firstPoint.y+1);
+        [self.drawnPoints addObject:[NSValue valueWithCGPoint:secondPoint]];
+    }
+    
     NSArray *generalizedPoints = [self _douglasPeucker:self.drawnPoints epsilon:2];
     NSArray *splinePoints = [self _catmullRomSpline:generalizedPoints segments:4];
     
